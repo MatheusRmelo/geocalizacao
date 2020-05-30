@@ -2,9 +2,10 @@
 <html>
 <body>
     <p id="demo">Clique no botão para receber as coordenadas:</p>
-    <p id="info">Clique no botão para receber as coordenadas:</p>
+    <p id="estado">Estado</p>
+    <p id="cidade">Cidade</p>
     <button onclick="getLocation()">Clique Aqui</button>
-    <button onclick="getLocation()">Clique para get</button>
+
 
 <script>
 function metodoGet(){
@@ -12,7 +13,8 @@ function metodoGet(){
 }
 
 var x=document.getElementById("demo");
-var i = document.getElementById("info")
+var estado = document.getElementById("estado")
+var cidade = document.getElementById("cidade")
 function getLocation()
   {
   if (navigator.geolocation)
@@ -23,14 +25,52 @@ function getLocation()
   }
 function showPosition(position)
 {
+    var latitude = position.coords.latitude
+    var longitude = position.coords.longitude
     x.innerHTML="Latitude: " + position.coords.latitude +
     "<br>Longitude: " + position.coords.longitude; 
+    var apikey = 'b4d9e74200b34823a6ad6226553c359c';
+    var api_url = 'https://api.opencagedata.com/geocode/v1/json'
 
-    var url = "https://api.opencagedata.com/geocode/v1/json?q=" + position.coords.latitude+position.coords.longitude + "&key=##"
-    var xhttp = new XMLHttpRequest();
-    xhttp.open("GET", url, false);
-    xhttp.send();
-    i.innerHTML="Dados: " + xhttp.responseText;
+    var request_url = api_url
+        + '?'
+        + 'key=' + apikey
+        + '&q=' + encodeURIComponent(latitude + ',' + longitude)
+        + '&pretty=1'
+        + '&no_annotations=1';
+
+    // see full list of required and optional parameters:
+    // https://opencagedata.com/api#forward
+
+    var request = new XMLHttpRequest();
+    request.open('GET', request_url, true);
+
+    request.onload = function() {
+        // see full list of possible response codes:
+        // https://opencagedata.com/api#codes
+
+        if (request.status == 200){ 
+            // Success!
+            var data = JSON.parse(request.responseText);
+            alert(data.results[0].formatted);
+            estado.innerHTML="Estado: " +  data.results[0].components.state;
+            cidade.innerHTML="Cidade:" + data.results[0].components.city;
+        } else if (request.status <= 500){ 
+        // We reached our target server, but it returned an error                   
+            console.log("unable to geocode! Response code: " + request.status);
+            var data = JSON.parse(request.responseText);
+            console.log(data.status.message);
+        } else {
+            console.log("server error");
+        }
+    };
+
+    request.onerror = function() {
+        // There was a connection error of some sort
+        console.log("unable to connect to server");        
+    };
+
+    request.send();  // make the request
 }
 function showError(error)
   {
@@ -55,4 +95,3 @@ function showError(error)
 </html>
 
 
-Read more: http://www.linhadecodigo.com.br/artigo/3653/usando-geolocalizacao-com-html5.aspx#ixzz6NuzPZwob
